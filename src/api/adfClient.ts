@@ -10,9 +10,12 @@ import type { AdfDatasetBundle } from '../data/types'
  * Local default: http://localhost:8787 (see api/server.ts)
  * Production: set VITE_ADF_API_BASE to your hosted API.
  */
+/** Empty string = same-origin (single-host deploy). Unset = local API default. */
+const rawBase = import.meta.env.VITE_ADF_API_BASE as string | undefined
 const API_BASE =
-  (import.meta.env.VITE_ADF_API_BASE as string | undefined)?.replace(/\/$/, '') ||
-  'http://localhost:8787'
+  rawBase === undefined
+    ? 'http://localhost:8787'
+    : String(rawBase).replace(/\/$/, '')
 
 export async function fetchAdfDataset(): Promise<AdfDatasetBundle> {
   try {

@@ -34,6 +34,15 @@ npm run dev        # API + UI together
 
 Optional filters: `?lotId=LOT-A2401&asOf=2026-10-12T00:00:00Z`
 
-## Production
+## Production / deploy
 
-Set `VITE_ADF_API_BASE` to your hosted API (same path `/wafer-track/bundle`). Replace SQLite in `api/db.ts` with a Synapse/`mssql` client when credentials are available.
+See **[DEPLOY.md](./DEPLOY.md)** for full step-by-step instructions (Azure split deploy, single App Service, and Docker).
+
+Quick single-host build:
+
+```bash
+VITE_ADF_API_BASE= npm run build
+SERVE_UI=1 ADF_API_PORT=8080 npx tsx api/server.ts
+```
+
+Replace SQLite in `api/db.ts` with a Synapse/`mssql` client when credentials are available.

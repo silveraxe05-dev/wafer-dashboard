@@ -1,16 +1,26 @@
 import cors from 'cors'
 import express from 'express'
+import { existsSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { dbPathUsed, migrate } from './db.js'
 import { loadBundle } from './queries.js'
 import { seedFabops } from './seed.js'
 
-const PORT = Number(process.env.ADF_API_PORT ?? 8787)
+const PORT = Number(process.env.ADF_API_PORT ?? process.env.PORT ?? 8787)
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const distDir = join(__dirname, '..', 'dist')
+const serveUi = process.env.SERVE_UI !== '0' && existsSync(distDir)
 
 migrate()
 seedFabops(false)
 
 const app = express()
-app.use(cors())
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(',').map((s) => s.trim()) ?? true,
+  }),
+)
 app.use(express.json())
 
 app.get('/health', (_req, res) => {
@@ -18,6 +28,7 @@ app.get('/health', (_req, res) => {
     ok: true,
     sink: 'synapse://fabops (sqlite stand-in)',
     db: dbPathUsed(),
+    serveUi,
   })
 })
 
@@ -47,8 +58,17 @@ app.get('/wafer-track/bundle', (req, res) => {
   }
 })
 
+// Single-host deploy: serve Vite build from the same process as the API.
+if (serveUi) {
+  app.use(express.static(distDir))
+  app.get(/.*/, (_req, res) => {
+    res.sendFile(join(distDir, 'index.html'))
+  })
+}
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`ADF wafer-track API on http://localhost:${PORT}`)
   console.log(`  GET /wafer-track/bundle`)
   console.log(`  DB  ${dbPathUsed()}`)
+  if (serveUi) console.log(`  UI  ${distDir}`)
 })
