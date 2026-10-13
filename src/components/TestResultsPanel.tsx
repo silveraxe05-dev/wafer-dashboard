@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import type { DieTestResult } from '../data/types'
+import type { DieTestResult, TestStage } from '../data/types'
 import { BIN_META } from '../lib/bins'
 import { DieWaferMap } from './DieWaferMap'
 
@@ -16,12 +16,13 @@ interface Props {
   dies: DieTestResult[]
 }
 
-type Stage = 'CP1' | 'CP2' | 'FT'
+type Stage = TestStage
 
 export function TestResultsPanel({ dies }: Props) {
   const stages = useMemo(() => {
-    const present = Array.from(new Set(dies.map((d) => d.testStage))) as Stage[]
-    return present.sort()
+    const order: Stage[] = ['CP1', 'CP2', 'CLASS', 'FT']
+    const present = new Set(dies.map((d) => d.testStage))
+    return order.filter((s) => present.has(s))
   }, [dies])
 
   const [stage, setStage] = useState<Stage | null>(null)
@@ -72,7 +73,9 @@ export function TestResultsPanel({ dies }: Props) {
       </div>
 
       {stageDies.length === 0 ? (
-        <div className="empty">Probe / final-test results appear after ADF lands STDF summaries.</div>
+        <div className="empty">
+          Probe / class / final-test results appear after ADF lands STDF summaries.
+        </div>
       ) : (
         <div className="map-grid">
           <DieWaferMap dies={stageDies} />

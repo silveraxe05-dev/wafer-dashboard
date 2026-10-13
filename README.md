@@ -1,45 +1,39 @@
 # WaferTrack
 
-Dashboard for **wafer movements across locations** and **die-level test results**, fed by datasets landed through **Azure Data Factory (ADF)**.
+Dashboard for **wafer movements** and **die test results** (CP1, CP2, Class Test, Final Test), fed by ADF-landed Synapse-shaped tables.
 
-## What it shows
+## Stack
 
-- Wafers currently at each fab / test / assembly station
-- Per-wafer movement timeline (MES events ingested by ADF)
-- Die bin maps and yield for CP1 / CP2 / FT stages
-- Filters by lot, location, product, and free-text search
-
-## Data source (ADF)
-
-ADF copies MES and tester feeds into Synapse, Fabric, or ADLS. A thin API should expose:
-
-`GET /wafer-track/bundle`
-
-returning the shape in `src/data/types.ts` (`AdfDatasetBundle`: wafers, movements, dieResults, locations).
-
-| Env | Behavior |
+| Layer | What |
 | --- | --- |
-| `VITE_ADF_API_BASE` unset | Uses local ADF-shaped mock (`src/data/mockAdf.ts`) |
-| `VITE_ADF_API_BASE=https://…` | Loads from `{base}/wafer-track/bundle` |
+| ADF sink (local stand-in) | SQLite tables matching `fabops.dim_*` / `fact_*` |
+| API | `GET /wafer-track/bundle` on port `8787` |
+| UI | Vite React dashboard (`VITE_ADF_API_BASE`) |
 
-See `.env.example`.
+### Tables
 
-### Suggested ADF sink tables
+- `dim_location`
+- `dim_wafer`
+- `fact_wafer_movement`
+- `fact_die_test_result` — `test_stage` ∈ `CP1` \| `CP2` \| `CLASS` \| `FT`
+- `adf_pipeline_meta`
 
-1. `dim_location` — station codes and sites  
-2. `fact_wafer_movement` — wafer_id, from/to location, equipment, timestamps  
-3. `fact_die_test_result` — wafer_id, die_x/y, stage, bin, parameters  
+Swap the SQLite file for Azure Synapse by pointing the API connection at Synapse; keep the same table/column names.
 
-Map those into the API bundle the dashboard already consumes.
-
-## Run locally
+## Run
 
 ```bash
 npm install
-npm run dev
+npm run api:seed   # force reseed fabops tables
+npm run dev        # API + UI together
 ```
 
-```bash
-npm run build
-npm run preview
-```
+- UI: http://localhost:5173  
+- API: http://localhost:8787/wafer-track/bundle  
+- Health: http://localhost:8787/health  
+
+Optional filters: `?lotId=LOT-A2401&asOf=2026-10-12T00:00:00Z`
+
+## Production
+
+Set `VITE_ADF_API_BASE` to your hosted API (same path `/wafer-track/bundle`). Replace SQLite in `api/db.ts` with a Synapse/`mssql` client when credentials are available.

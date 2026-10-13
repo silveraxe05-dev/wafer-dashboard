@@ -4,6 +4,7 @@ import { LocationBoard } from './components/LocationBoard'
 import { WaferDetail } from './components/WaferDetail'
 import { WaferList } from './components/WaferList'
 import type { DashboardFilters } from './data/types'
+import { adfApiBase } from './api/adfClient'
 import { useAdfData } from './hooks/useAdfData'
 import { format } from 'date-fns'
 
@@ -65,9 +66,9 @@ export default function App() {
           </p>
         </div>
         {data && (
-          <div className="adf-chip" title={data.sink}>
+          <div className="adf-chip" title={`${data.sink} · ${adfApiBase()}`}>
             <span className="adf-dot" />
-            ADF source · <strong>{data.pipelineRunId}</strong>
+            ADF API · <strong>{data.pipelineRunId}</strong>
             <span>· landed {format(new Date(data.landedAt), 'HH:mm:ss')}</span>
           </div>
         )}
@@ -78,8 +79,13 @@ export default function App() {
 
       {data && !loading && (
         <>
-          <FiltersBar wafers={data.wafers} filters={filters} onChange={setFilters} />
-          <LocationBoard wafers={filtered} />
+          <FiltersBar
+            wafers={data.wafers}
+            filters={filters}
+            onChange={setFilters}
+            locations={data.locations}
+          />
+          <LocationBoard wafers={filtered} locations={data.locations} />
           <div className="layout" style={{ marginTop: 18 }}>
             <WaferList
               wafers={filtered}

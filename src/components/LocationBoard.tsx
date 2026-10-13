@@ -1,12 +1,13 @@
-import type { Wafer } from '../data/types'
+import type { LocationMeta, Wafer } from '../data/types'
 import { LOCATIONS } from '../data/locations'
 
 interface Props {
   wafers: Wafer[]
+  locations?: LocationMeta[]
 }
 
-export function LocationBoard({ wafers }: Props) {
-  const counts = LOCATIONS.map((loc) => ({
+export function LocationBoard({ wafers, locations = LOCATIONS }: Props) {
+  const counts = locations.map((loc) => ({
     ...loc,
     count: wafers.filter((w) => w.currentLocation === loc.code).length,
   })).filter((l) => l.code !== 'HOLD' || l.count > 0)

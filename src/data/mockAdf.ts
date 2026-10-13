@@ -4,6 +4,7 @@ import type {
   DieBin,
   DieTestResult,
   LocationCode,
+  TestStage,
   Wafer,
   WaferMovement,
 } from './types'
@@ -23,6 +24,7 @@ const FLOW: LocationCode[] = [
   'CP2_PROBE',
   'INK',
   'SORT',
+  'CLASS_TEST',
   'ASSEMBLY',
   'FINAL_TEST',
   'SHIP',
@@ -42,7 +44,7 @@ function isoHoursAgo(hours: number) {
 
 function generateDieMap(
   waferId: string,
-  stage: 'CP1' | 'CP2' | 'FT',
+  stage: TestStage,
   radius: number,
   rand: () => number,
   hoursAgo: number,
@@ -55,12 +57,13 @@ function generateDieMap(
 
       let bin: DieBin = 'pass'
       const r = rand()
+      const failScale = stage === 'CLASS' || stage === 'FT' ? 0.7 : 1
       if (dist > radius - 0.6) bin = 'edge'
-      else if (r < 0.03) bin = 'fail_os'
-      else if (r < 0.055) bin = 'fail_leakage'
-      else if (r < 0.075) bin = 'fail_timing'
-      else if (r < 0.09) bin = 'fail_func'
-      else if (r < 0.1) bin = 'untested'
+      else if (r < 0.03 * failScale) bin = 'fail_os'
+      else if (r < 0.055 * failScale) bin = 'fail_leakage'
+      else if (r < 0.075 * failScale) bin = 'fail_timing'
+      else if (r < 0.09 * failScale) bin = 'fail_func'
+      else if (r < 0.1 * failScale) bin = 'untested'
 
       const hardBin =
         bin === 'pass' ? 1 : bin === 'edge' ? 8 : bin === 'untested' ? 0 : 5
@@ -95,7 +98,7 @@ function buildWafer(index: number): {
   const meta = PRODUCTS[index % PRODUCTS.length]
   const lotId = `LOT-A${2400 + Math.floor(index / 3)}`
   const waferId = `${lotId}-W${String((index % 25) + 1).padStart(2, '0')}`
-  const progress = Math.min(FLOW.length - 1, 2 + Math.floor(rand() * 8))
+  const progress = Math.min(FLOW.length - 1, 2 + Math.floor(rand() * 9))
   const onHold = rand() < 0.12
   const currentLocation: LocationCode = onHold ? 'HOLD' : FLOW[progress]
   const startedHours = 180 - index * 7
@@ -110,15 +113,13 @@ function buildWafer(index: number): {
       waferId,
       fromLocation: from,
       toLocation: to,
-      equipmentId: to.includes('PROBE')
-        ? `PRB-${100 + Math.floor(rand() * 20)}`
-        : to === 'BAKE'
-          ? `BK-${10 + Math.floor(rand() * 5)}`
-          : `EQ-${200 + Math.floor(rand() * 40)}`,
+      equipmentId: to.includes('PROBE') || to.includes('TEST')
+        ? `TST-${100 + Math.floor(rand() * 20)}`
+        : `EQ-${200 + Math.floor(rand() * 40)}`,
       operator: rand() > 0.3 ? `OP${1000 + Math.floor(rand() * 40)}` : null,
       status: i === progress ? (onHold ? 'hold' : 'processing') : 'complete',
       movedAt: isoHoursAgo(startedHours - i * 14 - rand() * 3),
-      notes: i === 3 && rand() > 0.7 ? 'Queue priority elevated' : null,
+      notes: i === 7 && rand() > 0.7 ? 'Class bin disposition pending' : null,
       sourcePipeline: 'adf-wafer-mes-ingest',
     })
   }
@@ -138,13 +139,22 @@ function buildWafer(index: number): {
     })
   }
 
-  const hasCp1 = progress >= 2
-  const hasCp2 = progress >= 4
   const dies: DieTestResult[] = []
-  if (hasCp1) dies.push(...generateDieMap(waferId, 'CP1', 8, rand, lastMovedHours + 20))
-  if (hasCp2) dies.push(...generateDieMap(waferId, 'CP2', 8, rand, lastMovedHours + 5))
+  if (progress >= 2) dies.push(...generateDieMap(waferId, 'CP1', 8, rand, lastMovedHours + 40))
+  if (progress >= 4) dies.push(...generateDieMap(waferId, 'CP2', 8, rand, lastMovedHours + 25))
+  if (progress >= 7) dies.push(...generateDieMap(waferId, 'CLASS', 8, rand, lastMovedHours + 12))
+  if (progress >= 9) dies.push(...generateDieMap(waferId, 'FT', 8, rand, lastMovedHours + 3))
 
-  const latestStage = hasCp2 ? 'CP2' : hasCp1 ? 'CP1' : null
+  const latestStage: TestStage | null =
+    progress >= 9
+      ? 'FT'
+      : progress >= 7
+        ? 'CLASS'
+        : progress >= 4
+          ? 'CP2'
+          : progress >= 2
+            ? 'CP1'
+            : null
   const latest = latestStage
     ? dies.filter((d) => d.testStage === latestStage && d.bin !== 'edge' && d.bin !== 'untested')
     : []
@@ -169,7 +179,7 @@ function buildWafer(index: number): {
   return { wafer, movements, dies }
 }
 
-/** Simulates an ADF pipeline landing zone (Synapse / Fabric lakehouse view). */
+/** In-browser fallback when the ADF API is unreachable. */
 export function loadMockAdfBundle(): AdfDatasetBundle {
   const wafers: Wafer[] = []
   const movements: WaferMovement[] = []
@@ -186,7 +196,7 @@ export function loadMockAdfBundle(): AdfDatasetBundle {
     sourcedFrom: 'adf',
     pipelineRunId: `adf-run-${new Date().toISOString().slice(0, 10)}-wafer-mes`,
     landedAt: new Date().toISOString(),
-    sink: 'synapse://fabops.wafer_track (via ADF Copy → Mapping Data Flow)',
+    sink: 'fallback-mock (start api with npm run api)',
     wafers,
     movements,
     dieResults,

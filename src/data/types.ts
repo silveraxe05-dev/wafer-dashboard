@@ -8,12 +8,15 @@ export type LocationCode =
   | 'BAKE'
   | 'INK'
   | 'SORT'
+  | 'CLASS_TEST'
   | 'ASSEMBLY'
   | 'FINAL_TEST'
   | 'SHIP'
   | 'HOLD'
 
 export type MovementStatus = 'in_transit' | 'arrived' | 'processing' | 'complete' | 'hold'
+
+export type TestStage = 'CP1' | 'CP2' | 'CLASS' | 'FT'
 
 export type DieBin =
   | 'pass'
@@ -56,7 +59,7 @@ export interface DieTestResult {
   waferId: string
   dieX: number
   dieY: number
-  testStage: 'CP1' | 'CP2' | 'FT'
+  testStage: TestStage
   bin: DieBin
   hardBin: number
   softBin: number

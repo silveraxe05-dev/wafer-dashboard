@@ -8,9 +8,10 @@ export const LOCATIONS: LocationMeta[] = [
   { code: 'CP2_PROBE', name: 'CP2 Probe', site: 'Penang', sequence: 5 },
   { code: 'INK', name: 'Ink / Mark', site: 'Penang', sequence: 6 },
   { code: 'SORT', name: 'Die Sort', site: 'Penang', sequence: 7 },
-  { code: 'ASSEMBLY', name: 'Assembly', site: 'Kulim', sequence: 8 },
-  { code: 'FINAL_TEST', name: 'Final Test', site: 'Kulim', sequence: 9 },
-  { code: 'SHIP', name: 'Ship Ready', site: 'Kulim', sequence: 10 },
+  { code: 'CLASS_TEST', name: 'Class Test', site: 'Kulim', sequence: 8 },
+  { code: 'ASSEMBLY', name: 'Assembly', site: 'Kulim', sequence: 9 },
+  { code: 'FINAL_TEST', name: 'Final Test', site: 'Kulim', sequence: 10 },
+  { code: 'SHIP', name: 'Ship Ready', site: 'Kulim', sequence: 11 },
   { code: 'HOLD', name: 'Quality Hold', site: 'Shared', sequence: 99 },
 ]
 

@@ -1,13 +1,19 @@
-import type { DashboardFilters, LocationCode, Wafer } from '../data/types'
+import type { DashboardFilters, LocationCode, LocationMeta, Wafer } from '../data/types'
 import { LOCATIONS } from '../data/locations'
 
 interface Props {
   wafers: Wafer[]
   filters: DashboardFilters
   onChange: (next: DashboardFilters) => void
+  locations?: LocationMeta[]
 }
 
-export function FiltersBar({ wafers, filters, onChange }: Props) {
+export function FiltersBar({
+  wafers,
+  filters,
+  onChange,
+  locations = LOCATIONS,
+}: Props) {
   const lots = Array.from(new Set(wafers.map((w) => w.lotId))).sort()
   const products = Array.from(new Set(wafers.map((w) => w.product))).sort()
 
@@ -52,7 +58,7 @@ export function FiltersBar({ wafers, filters, onChange }: Props) {
           }
         >
           <option value="all">All locations</option>
-          {LOCATIONS.map((loc) => (
+          {locations.map((loc) => (
             <option key={loc.code} value={loc.code}>
               {loc.name}
             </option>
