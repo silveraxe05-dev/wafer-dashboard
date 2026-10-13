@@ -16,10 +16,12 @@ const LOCATIONS = [
 ] as const
 
 const PRODUCTS = [
-  { product: 'Agilex 7 M-Series', technology: 'Intel 7' },
-  { product: 'Stratix 10 GX', technology: '14nm' },
-  { product: 'Cyclone 10 LP', technology: '60nm' },
-  { product: 'MAX 10', technology: '55nm' },
+  { product: 'GDR', technology: 'GDR', lotPrefix: 'LOT-GDR' },
+  { product: 'RNR', technology: 'RNR', lotPrefix: 'LOT-RNR' },
+  { product: 'WHR', technology: 'WHR', lotPrefix: 'LOT-WHR' },
+  { product: 'FP8', technology: 'FP8', lotPrefix: 'LOT-FP8' },
+  { product: 'Agilex 7 M-Series', technology: 'Intel 7', lotPrefix: 'LOT-AGX' },
+  { product: 'Stratix 10 GX', technology: '14nm', lotPrefix: 'LOT-S10' },
 ]
 
 const FLOW = [
@@ -173,11 +175,13 @@ export function seedFabops(force = false) {
   const insertMany = db.prepare('BEGIN')
   insertMany.run()
   try {
-    for (let i = 0; i < 18; i++) {
+    // Ensure GDR / RNR / WHR / FP8 each have multiple wafers in the queue
+    for (let i = 0; i < 24; i++) {
       const rand = seeded(2000 + i)
       const meta = PRODUCTS[i % PRODUCTS.length]
-      const lotId = `LOT-A${2400 + Math.floor(i / 3)}`
-      const waferId = `${lotId}-W${String((i % 25) + 1).padStart(2, '0')}`
+      const lotNum = 2400 + Math.floor(i / PRODUCTS.length)
+      const lotId = `${meta.lotPrefix}-${lotNum}`
+      const waferId = `${lotId}-W${String((Math.floor(i / PRODUCTS.length) % 25) + 1).padStart(2, '0')}`
       const progress = Math.min(FLOW.length - 1, 2 + Math.floor(rand() * 9))
       const onHold = rand() < 0.1
       const currentLocation = onHold ? 'HOLD' : FLOW[progress]

@@ -10,10 +10,12 @@ import type {
 } from './types'
 
 const PRODUCTS = [
-  { product: 'Agilex 7 M-Series', technology: 'Intel 7' },
-  { product: 'Stratix 10 GX', technology: '14nm' },
-  { product: 'Cyclone 10 LP', technology: '60nm' },
-  { product: 'MAX 10', technology: '55nm' },
+  { product: 'GDR', technology: 'GDR', lotPrefix: 'LOT-GDR' },
+  { product: 'RNR', technology: 'RNR', lotPrefix: 'LOT-RNR' },
+  { product: 'WHR', technology: 'WHR', lotPrefix: 'LOT-WHR' },
+  { product: 'FP8', technology: 'FP8', lotPrefix: 'LOT-FP8' },
+  { product: 'Agilex 7 M-Series', technology: 'Intel 7', lotPrefix: 'LOT-AGX' },
+  { product: 'Stratix 10 GX', technology: '14nm', lotPrefix: 'LOT-S10' },
 ]
 
 const FLOW: LocationCode[] = [
@@ -96,8 +98,9 @@ function buildWafer(index: number): {
 } {
   const rand = seeded(1000 + index)
   const meta = PRODUCTS[index % PRODUCTS.length]
-  const lotId = `LOT-A${2400 + Math.floor(index / 3)}`
-  const waferId = `${lotId}-W${String((index % 25) + 1).padStart(2, '0')}`
+  const lotNum = 2400 + Math.floor(index / PRODUCTS.length)
+  const lotId = `${meta.lotPrefix}-${lotNum}`
+  const waferId = `${lotId}-W${String((Math.floor(index / PRODUCTS.length) % 25) + 1).padStart(2, '0')}`
   const progress = Math.min(FLOW.length - 1, 2 + Math.floor(rand() * 9))
   const onHold = rand() < 0.12
   const currentLocation: LocationCode = onHold ? 'HOLD' : FLOW[progress]
@@ -185,7 +188,7 @@ export function loadMockAdfBundle(): AdfDatasetBundle {
   const movements: WaferMovement[] = []
   const dieResults: DieTestResult[] = []
 
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 24; i++) {
     const built = buildWafer(i)
     wafers.push(built.wafer)
     movements.push(...built.movements)
